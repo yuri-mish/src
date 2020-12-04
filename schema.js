@@ -72,8 +72,9 @@ const BlogQueryRootType = new GraphQLObjectType({
                     
                     const couch = dbf.couch.use('otk_2_doc_0001');
                 
-                    couch.changesReader.start({})
+                    couch.changesReader.start({since:0})
                         .on('batch',b=>{
+             //               console.log(2)
                             b.map(rec=>{
                                 console.log(rec)
                             })
