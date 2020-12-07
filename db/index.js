@@ -7,7 +7,7 @@ const pool = new Pool({
     user:"postgres",
     password:"qq031018"
 })
-module.exports = {
+module.exports = { 
   query: (text, params, callback) => {
     return pool.query(text, params, callback)
   },
