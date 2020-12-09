@@ -1,7 +1,7 @@
 const _ = require('lodash');
 
 const { GraphQLJSON, GraphQLJSONObject } = require('graphql-type-json');
-
+//const GraphQLDecimal =require('graphql-type-decimal');
 const Authors = require('./data/authors');
 const Posts = require('./data/posts');
 
@@ -11,10 +11,14 @@ let {
     GraphQLObjectType,
     GraphQLNonNull,
     GraphQLSchema,
+    GraphQLFloat,
     GraphQLFieldMap,
-    GraphQLInt
+    GraphQLInt,
+    GraphQLScalarType
 } = require('graphql');
 
+
+const {getRefObj,createQuery,createQueryTabular} = require('./schFunk');
 
 
 const PartnerType = new GraphQLObjectType({
@@ -22,14 +26,69 @@ const PartnerType = new GraphQLObjectType({
     description: "This represent Partner",
     extensions:{
         otk:{
-            key:'_id',
-            tbl:'cat'
+            keyF:'ref',
+            tbl:'cat',
+            class_name:'cat.partners'
         }
     },
-    fields: () =>{ console.log(this);return ({
+    fields: () =>{ 
+        //const {getRefObj} = require('./schFunk');
+        return ({
         _id: { type: GraphQLString},
-        ref: {type: GraphQLString},
+        ref: {type: GraphQLString,resolve:(obj)=>{return getRefObj(obj)}},
         name: { type: GraphQLString}
+        })
+    }
+});
+
+const NomType = new GraphQLObjectType({
+    name: "Nom",
+    description: "This represent Nomenclature",
+    extensions:{
+        otk:{
+            keyF:'ref',
+            tbl:'cat',
+            class_name:'cat.nom'
+        }
+    },
+    fields: () =>{ 
+        return ({
+        _id: { type: GraphQLString},
+        ref: {type: GraphQLString,resolve:(obj)=>{return getRefObj(obj)}},
+        name: { type: GraphQLString}
+        })
+    },
+});
+
+
+
+
+const OrganizationType = new GraphQLObjectType({
+    name: "Organisation",
+    description: "This represent Organization",
+    extensions:{
+        otk:{
+            keyF:'ref',
+            tbl:'cat',
+            class_name:'cat.organizations'
+        }
+    },
+    fields: () =>{ 
+        return ({
+        _id: { type: GraphQLString},
+        ref: {type: GraphQLString, resolve:(obj)=>{return getRefObj(obj)}},
+        name: { type: GraphQLString}
+        })
+    }
+});
+
+const ServiceLineBuyersOrderType = new GraphQLObjectType({
+    name: "ServiceLineBuyerOrder",
+    description: "This represent ServiceLineBuyerOrder",
+    fields: () =>{ 
+        return ({
+        nom: { type: NomType},
+        price: { type: GraphQLFloat}
         })
     }
 });
@@ -37,14 +96,33 @@ const PartnerType = new GraphQLObjectType({
 const BuyersOrderType = new GraphQLObjectType({
     name: "BuyersOrder",
     description: "This represent Buyers Order",
+    args: {
+        ref : {
+            type:GraphQLString
+        }
+    },
     fields: () => ({
-            _id:{type:GraphQLString,resolve:(obj,args,cont)=>{
-                              return obj.jsb._id}},
-            jsb: {type:GraphQLJSONObject},   
-            number_doc:{type:GraphQLString},
-            partner:{type:PartnerType},       
+        _id:{type:GraphQLString},
+        organization:{type: OrganizationType},
+        doc_amount:{type:GraphQLFloat},
+        number_doc:{type:GraphQLString},
+        date: { type: GraphQLString},
+        partner:{type:PartnerType},
+        services:{type:new GraphQLList(ServiceLineBuyersOrderType),
+            resolve: async (obj,arg,cont,info)=>{
+                console.log(obj._id)
+                 var qq = createQueryTabular(obj,info,'services','buyers_order',ServiceLineBuyersOrderType,10)
+                // const dbf = require('./db')
+                // res = await dbf.query(qq,[])
+                // return res.rows.map((e)=>{return e.jsb})
+                //}
+            }    
+        }    
     })
 });
+
+
+
 
 
 const AuthorType = new GraphQLObjectType({
@@ -100,25 +178,11 @@ const BlogQueryRootType = new GraphQLObjectType({
                     type:GraphQLString
                 }
             },
-            resolve: async function(par,arg,cont,info){
-//                console.log(rInfo.fieldNodes[0].selectionSet.selections)
-//const { fieldsList, fieldsMap,fieldsProjection } = require('graphql-fields-list');
-//console.log(fieldsList(info, { withDirectives: true }));       // [ 'id', 'firstName', 'lastName' ]
-//console.log(fieldsMap(info, { withDirectives: true }));        // { id: false, firstName: false, lastName: false }
-const fields = BuyersOrderType
-console.log(fields.getFields())
-//.map(f=>console.log(f.type))
-       
+            resolve: async function(par,args,cont,info){
+                var qq = createQuery(info,'buyers_order',BuyersOrderType,10)
                 const dbf = require('./db')
-                res = await dbf.query("SELECT * FROM doc d  limit 10 ",[])
-                //, (err, res) => {
-                //         if (err) {
-                //           console.log(err)
-                //         }
-                //         console.log(res.rows)
-                //         res.fields.map((val)=>{console.log(val.name)})
-                //       })
-                return res.rows
+                res = await dbf.query(qq,[])
+                return res.rows.map((e)=>{return e.jsb})
             }
         },
         tst:{
