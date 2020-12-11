@@ -18,7 +18,8 @@ let {
 } = require('graphql');
 
 
-const {getRefObj,createQuery,createQueryTabular} = require('./schFunk');
+const {getRefObj,createQuery,createQueryTabular,createQueryCat} = require('./schFunk');
+const {errorName} = require('../constants')
 
 
 const PartnerType = new GraphQLObjectType({
@@ -33,6 +34,24 @@ const PartnerType = new GraphQLObjectType({
     },
     fields: () =>{ 
         //const {getRefObj} = require('./schFunk');
+        return ({
+        _id: { type: GraphQLString},
+        ref: {type: GraphQLString,resolve:(obj)=>{return getRefObj(obj)}},
+        name: { type: GraphQLString}
+        })
+    }
+});
+const DeprtmentType = new GraphQLObjectType({
+    name: "Depatment",
+    description: "This represent Department",
+    extensions:{
+        otk:{
+            keyF:'ref',
+            tbl:'cat',
+            class_name:'cat.branches'
+        }
+    },
+    fields: () =>{ 
         return ({
         _id: { type: GraphQLString},
         ref: {type: GraphQLString,resolve:(obj)=>{return getRefObj(obj)}},
@@ -55,7 +74,8 @@ const NomType = new GraphQLObjectType({
         return ({
         _id: { type: GraphQLString},
         ref: {type: GraphQLString,resolve:(obj)=>{return getRefObj(obj)}},
-        name: { type: GraphQLString}
+        name: { type: GraphQLString},
+        name_full: { type: GraphQLString},
         })
     },
 });
@@ -108,16 +128,15 @@ const BuyersOrderType = new GraphQLObjectType({
         number_doc:{type:GraphQLString},
         date: { type: GraphQLString},
         partner:{type:PartnerType},
-        services:{type:new GraphQLList(ServiceLineBuyersOrderType),
-            resolve: async (obj,arg,cont,info)=>{
-                console.log(obj._id)
-                 var qq = createQueryTabular(obj,info,'services','buyers_order',ServiceLineBuyersOrderType,10)
-                // const dbf = require('./db')
-                // res = await dbf.query(qq,[])
-                // return res.rows.map((e)=>{return e.jsb})
-                //}
-            }    
-        }    
+        department:{type:DeprtmentType},
+        services:{  type:new GraphQLList(ServiceLineBuyersOrderType),
+                    resolve: async (obj,arg,cont,info)=>{
+                        var qq = createQueryTabular(obj,info,'services','buyers_order',ServiceLineBuyersOrderType,10)
+                        const dbf = require('./db')
+                        res = await dbf.query(qq,[])
+                        return res.rows.map((e)=>{return e.jsb})
+                    }    
+                }    
     })
 });
 
@@ -176,11 +195,35 @@ const BlogQueryRootType = new GraphQLObjectType({
             args: {
                 ref : {
                     type:GraphQLString
+                },
+                limit : {
+                    type:GraphQLInt
                 }
             },
             resolve: async function(par,args,cont,info){
-                var qq = createQuery(info,'buyers_order',BuyersOrderType,10)
+                var qq = createQuery(args,info,'buyers_order',BuyersOrderType)
+//                throw  new Error(errorName.USER_ALREADY_EXISTS)
                 const dbf = require('./db')
+                res = await dbf.query(qq,[])
+                return res.rows.map((e)=>{return e.jsb})
+            }
+        },
+        partners:{
+            name:'partners',
+            type: new GraphQLList(PartnerType),
+            args: {
+                ref : {
+                    type:GraphQLString
+                },
+                limit : {
+                    type:GraphQLInt
+                },
+                lookup:{type:GraphQLString}
+            },
+            resolve: async function(par,args,cont,info){
+                var qq = createQueryCat(args,info,'partners',PartnerType,50,{lookup:args.lookup})
+                const dbf = require('./db')
+                console.log(qq)
                 res = await dbf.query(qq,[])
                 return res.rows.map((e)=>{return e.jsb})
             }
