@@ -82,6 +82,8 @@ const createQueryCat = (args,info,class_name,type,limit=undefined,createQueryOpt
     qq = qq + " SELECT s.jsb,s.orderU,s.jsb->>'name' jname from (SELECT d.jsb"+strSel+" jsb, 1 orderU FROM cat d "+ strJoin + " WHERE d.jsb->>'class_name'= 'cat."+class_name+"'"+filt 
     if (createQueryOptions.nameContaine)
         qq = qq + " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
+    if (createQueryOptions.nameContaine)
+        qq = qq + " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
     if (limit) qq = qq + "LIMIT "+limit 
     qq = qq + " ) s"
     qq = qq + " ORDER BY orderU, jname"

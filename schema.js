@@ -15,6 +15,7 @@ let {
   GraphQLFieldMap,
   GraphQLInt,
   GraphQLScalarType,
+  GraphQLInputObjectType,
 } = require("graphql");
 
 const {
@@ -140,6 +141,7 @@ const PartnerType = new GraphQLObjectType({
         },
       },
       name: { type: GraphQLString },
+      edrpou: { type: GraphQLString }, 
     };
   },
 });
@@ -291,6 +293,15 @@ const PostType = new GraphQLObjectType({
   }),
 });
 
+const filtType = new GraphQLInputObjectType({
+  name: 'filter',
+  fields: {
+    "field": { type: GraphQLString },
+    "expr": { type: GraphQLString },
+    "value": { type: GraphQLString },
+  }
+}); 
+
 const BlogQueryRootType = new GraphQLObjectType({
   name: "BlogAppSchema",
   description: "Blog Application Schema Query Root",
@@ -319,6 +330,7 @@ const BlogQueryRootType = new GraphQLObjectType({
         limit: {
           type: GraphQLInt,
         },
+        
       },
       resolve: async function (par, args, cont, info) {
         //console.log('session:',cont)  
@@ -345,9 +357,18 @@ const BlogQueryRootType = new GraphQLObjectType({
           type: GraphQLInt,
         },
         lookup: { type: GraphQLString },
-        nameContaine:{type : GraphQLString}
+        nameContaine:{type : GraphQLString},
+        name: {type: GraphQLString} ,
+        edrpou: {type: GraphQLString} ,
+        filter:{
+          type: new GraphQLList(filtType)
+            },
+            skip:{type:GraphQLInt},
+            js:{type:GraphQLJSON},
+    
       },
       resolve: async function (par, args, cont, info) {
+        console.log(args)
         var qq = createQueryCat(args, info, "partners", PartnerType, 50, {
           lookup: args.lookup,
           nameContaine:args.nameContaine
