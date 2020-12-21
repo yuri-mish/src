@@ -225,6 +225,9 @@ const ServiceLineBuyersOrderType = new GraphQLObjectType({
     return {
       nom: { type: NomType },
       price: { type: GraphQLFloat },
+      quantity: { type: GraphQLFloat },
+      amount:{ type: GraphQLFloat },
+      discount_percent:{ type: GraphQLFloat },
     };
   },
 });
@@ -356,6 +359,9 @@ const BlogQueryRootType = new GraphQLObjectType({
         limit: {
           type: GraphQLInt,
         },
+        offset: {
+          type: GraphQLInt,
+        },
         lookup: { type: GraphQLString },
         nameContaine:{type : GraphQLString},
         name: {type: GraphQLString} ,
@@ -370,6 +376,44 @@ const BlogQueryRootType = new GraphQLObjectType({
       resolve: async function (par, args, cont, info) {
         console.log(args)
         var qq = createQueryCat(args, info, "partners", PartnerType, 50, {
+          lookup: args.lookup,
+          nameContaine:args.nameContaine
+        });
+        const dbf = require("./db");
+        console.log(qq);
+        res = await dbf.query(qq, []);
+        return res.rows.map((e) => {
+          return e.jsb;
+        });
+      },
+    },
+    noms: {
+      name: "noms",
+      type: new GraphQLList(NomType),
+      args: {
+        ref: {
+          type: GraphQLString,
+        },
+        limit: {
+          type: GraphQLInt,
+        },
+        offset: {
+          type: GraphQLInt,
+        },
+        lookup: { type: GraphQLString },
+        nameContaine:{type : GraphQLString},
+        name: {type: GraphQLString} ,
+        edrpou: {type: GraphQLString} ,
+        filter:{
+          type: new GraphQLList(filtType)
+            },
+            skip:{type:GraphQLInt},
+            js:{type:GraphQLJSON},
+    
+      },
+      resolve: async function (par, args, cont, info) {
+        console.log(args)
+        var qq = createQueryCat(args, info, "nom", NomType, 50, {
           lookup: args.lookup,
           nameContaine:args.nameContaine
         });

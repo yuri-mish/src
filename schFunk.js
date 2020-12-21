@@ -71,22 +71,32 @@ const createQueryCat = (args,info,class_name,type,limit=undefined,createQueryOpt
             }
         if  (args.limit)   limit = args.limit
     }
+    if  (args.filter)
+        args.filter.forEach(f_el=>{
+            filt += ` and d.jsb->>'${f_el.field}' ilike '%${f_el.value}%' `
+        })
+
     var qq=''
+
+    _offset=''    
+    if (args.offset) {
+        _offset = args.offset
+    }
+
     console.log("o:",createQueryOptions)
     if (createQueryOptions.lookup) {
-        console.log("o-yess:",createQueryOptions)
-
         qq = "SELECT d.jsb"+strSel+" jsb, 0 orderU,d.jsb->>'name' jname FROM cat d "+ strJoin + " where d.jsb->>'class_name'= 'cat."+class_name+"' and d.ref = '"+createQueryOptions.lookup.trim()+"' UNION " 
       //  filt = " and d.jsb->>'name' LiKE '%КОПАЙ%' "
     }
-    qq = qq + " SELECT s.jsb,s.orderU,s.jsb->>'name' jname from (SELECT d.jsb"+strSel+" jsb, 1 orderU FROM cat d "+ strJoin + " WHERE d.jsb->>'class_name'= 'cat."+class_name+"'"+filt 
+    qq += " SELECT s.jsb,s.orderU,s.jsb->>'name' jname from (SELECT d.jsb"+strSel+" jsb, 1 orderU FROM cat d "+ strJoin + " WHERE d.jsb->>'class_name'= 'cat."+class_name+"'"+filt 
     if (createQueryOptions.nameContaine)
-        qq = qq + " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
+        qq += " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
     if (createQueryOptions.nameContaine)
-        qq = qq + " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
-    if (limit) qq = qq + "LIMIT "+limit 
-    qq = qq + " ) s"
-    qq = qq + " ORDER BY orderU, jname"
+        qq += " and d.jsb->>'name' ILIKE '%"+createQueryOptions.nameContaine+"%' "
+        qq += " ) s"
+    qq += " ORDER BY orderU, jname"
+    if (limit) qq +=  " LIMIT "+limit 
+    if (_offset) qq +=  " OFFSET "+_offset 
     //console.log(args)
     //console.log(qq)
 
